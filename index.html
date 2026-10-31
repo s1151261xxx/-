@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>樂齡防手抖數位簽名與寫字板</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; text-align: center; background: #f4f6f9; margin-top: 30px; }
+        h2 { color: #1a2b4c; }
+        .card { background: white; display: inline-block; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        canvas { border: 2px dashed #b0c4de; background: #ffffff; cursor: crosshair; touch-action: none; border-radius: 8px; }
+        .btn-group { margin: 15px 0; }
+        button, label { font-size: 16px; padding: 8px 16px; margin: 0 8px; cursor: pointer; font-weight: bold; }
+        button { background-color: #1a2b4c; color: white; border: none; border-radius: 6px; }
+        button:hover { background-color: #2c3e50; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>樂齡防手抖數位寫字與簽名板</h2>
+        <p style="color: #666; font-size: 14px;">結合物理防抖與移動平均濾波演算法，協助手抖長輩流暢書寫</p>
+        
+        <div class="btn-group">
+            <label><input type="checkbox" id="antiShakeToggle" checked> 開啟防手抖演算法</label>
+            <button onclick="clearCanvas()">清空畫布</button>
+        </div>
+        
+        <canvas id="drawCanvas" width="700" height="450"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+        const toggle = document.getElementById('antiShakeToggle');
+
+        let isDrawing = false;
+        let pointsX = [];
+        let pointsY = [];
+        const windowSize = 14; // 平滑強度參數
+
+        // 支援滑鼠、觸控板與手機/平板觸控
+        canvas.addEventListener('pointerdown', (e) => {
+            isDrawing = true;
+            pointsX = [];
+            pointsY = [];
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+            if (!isDrawing) return;
+
+            let x = e.offsetX;
+            let y = e.offsetY;
+
+            if (toggle.checked) {
+                // 【有開防手抖】：移動平均濾波演算法
+                pointsX.push(x);
+                pointsY.push(y);
+                if (pointsX.length > windowSize) {
+                    pointsX.shift();
+                    pointsY.shift();
+                }
+                x = pointsX.reduce((a, b) => a + b, 0) / pointsX.length;
+                y = pointsY.reduce((a, b) => a + b, 0) / pointsY.length;
+            }
+
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = '#1a2b4c';
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        });
+
+        canvas.addEventListener('pointerup', () => { isDrawing = false; });
+        canvas.addEventListener('pointerleave', () => { isDrawing = false; });
+        
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    </script>
+</body>
+</html>
